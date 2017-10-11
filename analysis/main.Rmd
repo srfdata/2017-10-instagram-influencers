@@ -32,7 +32,7 @@ r_version <- "3.4.1"
 
 ## Preliminary Remarks
 
-This document illustrates the analysis supporting the articles on Instagram influencers, published on October 11th, 2017 and available on the [home page of SRF Data](https:/www.srf.ch/data).
+This document illustrates the analysis supporting the articles on Instagram influencers, published on October 11th, 2017 and available on the [home page of SRF Data](https://www.srf.ch/data).
 
 SRF Data attaches great importance to transparent and reproducible data preprocessing and -analysis. SRF Data believes in the principles of open data but also open and reproducible methods. Third parties should be empowered to build on the work of SRF Data and to generate new analyses and applications.
 
