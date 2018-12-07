@@ -5,26 +5,31 @@ date: "October 2017"
 output:
   html_document:
     code_folding: show
-    echo: yes
-    message: no
+    echo: TRUE
+    warning: FALSE
+    message: FALSE
     theme: simplex
-    toc: yes
-    toc_float:
-      collapsed: no
-      smooth_scroll: no
-    warning: no
-  pdf_document:
     df_print: kable
-    fig_caption: no
     toc: yes
-    toc_depth: 2
+    toc_depth: 4
+    toc_float: 
+      collapsed: false
+      smooth_scroll: false
 subtitle: A Statistical Learning Approach
 ---
 
 
 ```{r, echo = FALSE}
-project_name <- "2017-10-instagram-influencers" # normal formatting: `r project_name`
-r_version <- "3.4.1"
+# CONFIG
+user_name <- "srfdata" # github user name
+project_name <- "2017-10-instagram-influencers" # adapt to new repo name
+package_date <- "2017-06-01" # date of the CRAN snapshot that
+# the checkpoint package uses
+R_version <- "3.4.4" # R-Version to use
+options(Ncpus = 4) # use 4 cores for parallelized installation of packages
+if (R_version != paste0(version$major, ".", version$minor)){
+  stop("ERROR: specified R version does not match currently used.")
+}
 ```
 
 
@@ -40,9 +45,9 @@ SRF Data attaches great importance to transparent and reproducible data preproce
 
 The analysis of the data was conducted in the [R project for statistical computing](https://www.r-project.org/). The RMarkdown script used to generate this document and all the resulting data can be downloaded under this [link](https://srfdata.github.io/`r project_name`/rscript.zip). Through executing `analysis.Rmd`, the herein described process can be reproduced and this document can be generated. In the course of this, data from the folder `ìnput` will be processed and results will be written into `output`.
 
-**R version `r r_version`** is used. If the code does not work, it is very likely that an older R version is installed. If an error occures it sometimes helps to execute the script several times. Particularly in the case of package installation problems it could be helpful to restart the R session and execute the code over again. If necessary, third party libraries like `libgdal-dev` have to be installed.
+**R version `r R_version`** is used. If the code does not work, it is very likely that an older R version is installed. If an error occures it sometimes helps to execute the script several times. Particularly in the case of package installation problems it could be helpful to restart the R session and execute the code over again. If necessary, third party libraries like `libgdal-dev` have to be installed.
 
-*Attention*: Please set your working directory in the first code chunk!
+*This report was generated on `r Sys.time()`. R version: `r paste0(version$major, ".", version$minor)` on `r version$platform`. For this report, CRAN packages as of `r package_date` were used.*
 
 ### GitHub
 
@@ -86,16 +91,27 @@ detach_all_packages <- function() {
 }
 
 detach_all_packages()
-# nolint start
-# Set working directory here!
-path_to_wd <- switch(EXPR = system2("whoami", stdout = TRUE),
-                     "srfdata" = "~/SRF/Projekte/2017-10-instagram-influencers/analysis/",
-                     NULL)
-# nolint end
-if ( is.null(path_to_wd) ) {
-  stop("No working directory specified for current user")
+
+# this allows multiple persons to use the same RMarkdown
+# without adjusting the working directory by themselves all the time
+source("scripts/csf.R")
+path_to_wd <- csf() # if this - for some reason - does not work,
+# replace with a hardcoded path, like so: "~/projects/rddj-template/analysis/"
+if ( is.null(path_to_wd) | !dir.exists(path_to_wd)) {
+  print("WARNING: No working directory specified for current user")
 } else {
   setwd(path_to_wd)
+}
+
+# suppress scientific notation
+options(scipen = 999)
+
+# unload global rstudioapi and knitr again to avoid conflicts with checkpoint
+# this is only necessary if executed within RStudio
+# outside of RStudio, namely in the knit.sh script, this causes RMarkdown
+# rendering to fail, thus should not be executed there
+if (Sys.getenv("RSTUDIO") == "1"){
+  detach_all_packages()
 }
 ```
 
@@ -124,21 +140,22 @@ library(randomForest) # self-evident
 library(Hmisc) # imputing missing values
 library(epiR) # confidence interval of sensitivity, specificity, prediction",
 file = "manifest.R")
-# the actual version refers to 1 June 2017 
-package_date <- "2017-06-01"
 ```
 
 ### Install Packages
 
 ```{r install packages, message = FALSE, results = "hide"}
+# if checkpoint is not yet installed, install it (for people using this
+# system for the first time)
 if (!require(checkpoint)) {
   if (!require(devtools)) {
     install.packages("devtools", repos = "http://cran.us.r-project.org")
     require(devtools)
   }
-  devtools::install_github("checkpoint",
-                           username = "RevolutionAnalytics",
-                           ref = "v0.3.2",
+  devtools::install_github("RevolutionAnalytics/checkpoint",
+                           ref = "v0.3.2", # could be adapted later,
+                           # as of now (beginning of July 2017
+                           # this is the current release on CRAN)
                            repos = "http://cran.us.r-project.org")
   require(checkpoint)
 }
@@ -147,15 +164,14 @@ if (!dir.exists("~/.checkpoint")) {
   dir.create("~/.checkpoint")
 }
 # nolint end
+# install packages for the specified CRAN snapshot date
 checkpoint(snapshotDate = package_date,
            project = path_to_wd,
            verbose = T,
            scanForPackages = T,
            use.knitr = F,
-           R.version = r_version) # if a "similar" R version is installed
- # (in this case 3.4.x), 
- # this argument can be removed and the exisitng R version can be used - 
-rm(package_date, r_version)
+           R.version = R_version)
+rm(package_date)
 ```
 
 ### Load Packages
@@ -164,7 +180,6 @@ rm(package_date, r_version)
 source("manifest.R")
 unlink("manifest.R")
 sessionInfo()
-rm(list = ls(all.names = TRUE))
 ```
 
 ## 1. Introduction
